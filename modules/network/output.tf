@@ -21,3 +21,7 @@ output "public_subnet_1a" {
 output "public_subnet_1b" {
   value = aws_subnet.eks_subnet_public_1b.id
 }
+
+output "aws_vpc_id" {
+  value = aws_vpc.eks_vpc.id
+}
