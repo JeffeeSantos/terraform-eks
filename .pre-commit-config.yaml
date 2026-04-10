@@ -9,3 +9,6 @@ repos:
     - id: terraform_validate
       args:
         - --args=-no-color
+    - id: terraform_docs
+      args:
+        - --args=---output-file README.md
