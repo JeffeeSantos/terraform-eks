@@ -112,7 +112,16 @@ jobs:
     strategy:
       matrix:
         environment: ${{ fromJson(needs.detect-environment.outputs.environments) }}
-    if: github.event_name == 'pull_request'
+    if: github.event_name == 'pull_request'    
+  # Job 5B: Plan for Push (executado em push para main/develop)
+  plan-push:
+    name: 'Terraform Plan (Push)'
+    needs: [detect-environment, validate, security]
+    runs-on: ubuntu-latest
+    strategy:
+      matrix:
+        environment: ${{ fromJson(needs.detect-environment.outputs.environments) }}
+    if: github.event_name == 'push' && (github.ref == 'refs/heads/main' || github.ref == 'refs/heads/develop')
     steps:
       - uses: actions/checkout@v4
 
@@ -146,25 +155,10 @@ jobs:
           path: ${{ env.TERRAFORM_DIR }}/${{ matrix.environment }}/tfplan
           retention-days: 1
 
-      - name: 'Comment PR with Plan'
-        uses: actions/github-script@v6
-        with:
-          script: |
-            const fs = require('fs');
-            const environment = '${{ matrix.environment }}';
-            const planOutput = 'Plan result will be commented here';
-            
-            github.rest.issues.createComment({
-              issue_number: context.issue.number,
-              owner: context.repo.owner,
-              repo: context.repo.repo,
-              body: `## Terraform Plan - ${environment}\n\`\`\`\n${planOutput}\n\`\`\``
-            });
-
-  # Job 6: Apply (executado apenas na main após merge)
+  # Job 6: Apply (executado apenas em push para main após merge)
   apply:
     name: 'Terraform Apply'
-    needs: [detect-environment, validate, security, plan]
+    needs: [detect-environment, validate, security, plan-push]
     runs-on: ubuntu-latest
     strategy:
       matrix:
