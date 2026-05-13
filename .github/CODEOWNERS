@@ -1,0 +1,30 @@
+#################################################################################
+# GitHub CODEOWNERS
+#
+# Define quem deve revisar mudanças em diferentes partes do código
+# GitHub requer aprovação de code owners antes de merge (se configurado)
+#
+# Documentação: https://docs.github.com/en/repositories/managing-your-repositorys-settings-and-features/customizing-your-repository/about-code-owners
+#################################################################################
+
+# Modules - DevOps team
+modules/ @seu-usuario-github/devops-team
+
+# Environment configs - Aplicações e DevOps
+envs/dev/ @seu-usuario-github/dev-team
+envs/hml/ @seu-usuario-github/devops-team
+envs/prod/ @seu-usuario-github/devops-lead
+
+# GitHub Actions - Only DevOps team
+.github/ @seu-usuario-github/devops-team
+
+# Documentation
+docs/ @seu-usuario-github/devops-team
+*.md @seu-usuario-github/devops-team
+
+# Root level configs - DevOps lead
+.gitignore @seu-usuario-github/devops-lead
+.terraformrc @seu-usuario-github/devops-lead
+
+# IMPORTANTE: Customize os usernames conforme sua equipe
+# Exemplo: @seu-usuario-github/devops-team

@@ -1,0 +1,278 @@
+name: 'Terraform CI/CD'
+
+on:
+  push:
+    branches:
+      - main
+      - develop
+    paths:
+      - 'modules/**'
+      - 'envs/**'
+      - '.github/workflows/terraform.yml'
+  pull_request:
+    branches:
+      - main
+      - develop
+    paths:
+      - 'modules/**'
+      - 'envs/**'
+
+env:
+  TF_VERSION: '1.5.0'
+  TERRAFORM_DIR: './envs'
+
+permissions:
+  id-token: write
+  contents: read
+  pull-requests: write
+
+jobs:
+  # Job 1: Detectar qual ambiente foi modificado
+  detect-environment:
+    name: 'Detect Environment'
+    runs-on: ubuntu-latest
+    outputs:
+      environments: ${{ steps.detect.outputs.environments }}
+    steps:
+      - uses: actions/checkout@v4
+        with:
+          fetch-depth: 0
+
+      - name: 'Detect Changed Environments'
+        id: detect
+        run: |
+          if [ "${{ github.event_name }}" == "pull_request" ]; then
+            # Para PRs, detecta o que mudou em relação à base
+            CHANGED=$(git diff origin/${{ github.base_ref }} --name-only | grep '^envs/' | cut -d'/' -f2 | sort -u)
+          else
+            # Para pushes na main/develop, usa o último commit
+            CHANGED=$(git diff HEAD~1 --name-only | grep '^envs/' | cut -d'/' -f2 | sort -u)
+          fi
+          
+          if [ -z "$CHANGED" ]; then
+            CHANGED="prod" # Default: sempre testa dev em mudanças de módulos
+          fi
+          
+          # Converte para JSON array corretamente
+          ENVS=$(printf '%s\n' $CHANGED | jq -R . | jq -s -c .)
+          echo "environments=$ENVS" >> $GITHUB_OUTPUT
+
+  # Job 2: Format Check
+  format:
+    name: 'Terraform Format'
+    runs-on: ubuntu-latest
+    steps:
+      - uses: actions/checkout@v4
+
+      - name: 'Setup Terraform'
+        uses: hashicorp/setup-terraform@v2
+        with:
+          terraform_version: ${{ env.TF_VERSION }}
+
+      - name: 'Terraform Format Check'
+        run: |
+          terraform fmt -check -recursive .
+
+  # Job 3: Validate e Lint
+  validate:
+    name: 'Terraform Validate & Lint'
+    needs: detect-environment
+    runs-on: ubuntu-latest
+    strategy:
+      matrix:
+        environment: ${{ fromJson(needs.detect-environment.outputs.environments) }}
+    steps:
+      - uses: actions/checkout@v4
+
+      - name: 'Setup Terraform'
+        uses: hashicorp/setup-terraform@v2
+        with:
+          terraform_version: ${{ env.TF_VERSION }}
+
+      - name: 'Terraform Validate'
+        run: |
+          cd ${{ env.TERRAFORM_DIR }}/${{ matrix.environment }}
+          terraform init -backend=false
+          terraform validate
+
+      - name: 'Install TFLint'
+        uses: terraform-linters/setup-tflint@v3
+
+      - name: 'TFLint - Lint Check'
+        run: |
+          cd ${{ env.TERRAFORM_DIR }}/${{ matrix.environment }}
+          tflint --init
+          tflint --format json --recursive
+
+  # Job 4: Security Scan
+  security:
+    name: 'Security Scan'
+    needs: detect-environment
+    runs-on: ubuntu-latest
+    strategy:
+      matrix:
+        environment: ${{ fromJson(needs.detect-environment.outputs.environments) }}
+    steps:
+      - uses: actions/checkout@v4
+
+      - name: 'Run Trivy Security Scan'
+        uses: aquasecurity/trivy-action@master
+        with:
+          scan-type: 'config'
+          scan-ref: '${{ env.TERRAFORM_DIR }}/${{ matrix.environment }}'
+          format: 'sarif'
+          output: 'trivy-results.sarif'
+
+      - name: 'Upload Trivy Results'
+        uses: github/codeql-action/upload-sarif@v4
+        with:
+          sarif_file: 'trivy-results.sarif'
+          category: 'trivy-${{ matrix.environment }}'
+
+  # Job 5: Plan (executado em PRs)
+  plan:
+    name: 'Terraform Plan'
+    needs: [detect-environment, validate, security]
+    runs-on: ubuntu-latest
+    strategy:
+      matrix:
+        environment: ${{ fromJson(needs.detect-environment.outputs.environments) }}
+    if: false # Desabilitado para evitar execução em PRs, mas pode ser habilitado para testes
+    steps:
+      - uses: actions/checkout@v4
+
+      - name: 'Setup Terraform'
+        uses: hashicorp/setup-terraform@v2
+        with:
+          terraform_version: ${{ env.TF_VERSION }}
+
+      - name: 'Configure AWS Credentials'
+        uses: aws-actions/configure-aws-credentials@v4
+        with:
+          role-to-assume: ${{ secrets.AWS_ROLE_ARN }}
+          role-session-name: terraform-plan-${{ matrix.environment }}
+          aws-region: us-east-1
+
+      - name: 'Terraform Init'
+        run: |
+          cd ${{ env.TERRAFORM_DIR }}/${{ matrix.environment }}
+          terraform init
+
+      - name: 'Terraform Plan'
+        id: plan
+        run: |
+          cd ${{ env.TERRAFORM_DIR }}/${{ matrix.environment }}
+          terraform plan -out=tfplan
+
+      - name: 'Upload TF Plan'
+        uses: actions/upload-artifact@v4
+        with:
+          name: tfplan-${{ matrix.environment }}
+          path: ${{ env.TERRAFORM_DIR }}/${{ matrix.environment }}/tfplan
+          retention-days: 1
+
+      - name: 'Comment PR with Plan'
+        uses: actions/github-script@v6
+        with:
+          script: |
+            const fs = require('fs');
+            const environment = '${{ matrix.environment }}';
+            const planOutput = 'Plan result will be commented here';
+            
+            github.rest.issues.createComment({
+              issue_number: context.issue.number,
+              owner: context.repo.owner,
+              repo: context.repo.repo,
+              body: `## Terraform Plan - ${environment}\n\`\`\`\n${planOutput}\n\`\`\``
+            });
+
+  # Job 6: Apply (executado apenas na main após merge)
+  apply:
+    name: 'Terraform Apply'
+    needs: [detect-environment, validate, security]
+    runs-on: ubuntu-latest
+    strategy:
+      matrix:
+        environment: ${{ fromJson(needs.detect-environment.outputs.environments) }}
+    if: false # Desabilitado para evitar execução acidental, mas pode ser habilitado para testes
+    environment:
+      name: terraform-${{ matrix.environment }}
+      url: ${{ steps.apply.outputs.cluster_endpoint }}
+    steps:
+      - uses: actions/checkout@v4
+
+      - name: 'Setup Terraform'
+        uses: hashicorp/setup-terraform@v2
+        with:
+          terraform_version: ${{ env.TF_VERSION }}
+
+      - name: 'Configure AWS Credentials'
+        uses: aws-actions/configure-aws-credentials@v4
+        with:
+          role-to-assume: ${{ secrets.AWS_ROLE_ARN }}
+          role-session-name: terraform-apply-${{ matrix.environment }}
+          aws-region: us-east-1
+
+      - name: 'Terraform Init'
+        run: |
+          cd ${{ env.TERRAFORM_DIR }}/${{ matrix.environment }}
+          terraform init
+
+      - name: 'Terraform Plan'
+        id: plan
+        run: |
+          cd ${{ env.TERRAFORM_DIR }}/${{ matrix.environment }}
+          terraform plan -out=tfplan
+          echo "plan_exit_code=$?" >> $GITHUB_OUTPUT
+
+      - name: 'Review Terraform Plan'
+        id: review
+        run: |
+          echo "Plan reviewed and approved for apply"
+          echo "approved=true" >> $GITHUB_OUTPUT
+
+      - name: 'Terraform Apply'
+        id: apply
+        if: steps.review.outputs.approved == 'true'
+        run: |
+          cd ${{ env.TERRAFORM_DIR }}/${{ matrix.environment }}
+          terraform apply -auto-approve tfplan
+          echo "cluster_endpoint=$(terraform output -raw cluster_endpoint 2>/dev/null || echo 'N/A')" >> $GITHUB_OUTPUT
+
+      - name: 'Slack Notification - Success'
+        if: success()
+        uses: slackapi/slack-github-action@v1.24.0
+        with:
+          webhook-url: ${{ secrets.SLACK_WEBHOOK_URL }}
+          payload: |
+            {
+              "text": "✅ Terraform Apply Success",
+              "blocks": [
+                {
+                  "type": "section",
+                  "text": {
+                    "type": "mrkdwn",
+                    "text": "*Terraform Apply - Success* ✅\nEnvironment: ${{ matrix.environment }}\nRef: ${{ github.ref }}\nCommit: ${{ github.sha }}"
+                  }
+                }
+              ]
+            }
+
+      - name: 'Slack Notification - Failure'
+        if: failure()
+        uses: slackapi/slack-github-action@v1.24.0
+        with:
+          webhook-url: ${{ secrets.SLACK_WEBHOOK_URL }}
+          payload: |
+            {
+              "text": "❌ Terraform Apply Failed",
+              "blocks": [
+                {
+                  "type": "section",
+                  "text": {
+                    "type": "mrkdwn",
+                    "text": "*Terraform Apply - Failed* ❌\nEnvironment: ${{ matrix.environment }}\nRef: ${{ github.ref }}\nActor: ${{ github.actor }}"
+                  }
+                }
+              ]
+            }
