@@ -175,9 +175,7 @@ jobs:
     strategy:
       matrix:
         environment: ${{ fromJson(needs.detect-environment.outputs.environments) }}
-    if: |
-      github.event_name == 'issue_comment' &&
-      contains(github.event.comment.body, '/terraform apply')
+    if: github.ref == 'refs/heads/main' && github.event_name == 'push'
     environment:
       name: terraform-${{ matrix.environment }}
       url: ${{ steps.apply.outputs.cluster_endpoint }}
