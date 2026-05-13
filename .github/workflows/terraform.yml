@@ -1,21 +1,13 @@
-name: 'Terraform CI/CD'
-
 on:
   push:
     branches:
       - main
       - develop
-    paths:
-      - 'modules/**'
-      - 'envs/**'
-      - '.github/workflows/terraform.yml'
+
   pull_request:
     branches:
       - main
       - develop
-    paths:
-      - 'modules/**'
-      - 'envs/**'
 
 env:
   TF_VERSION: '1.5.0'
@@ -35,28 +27,10 @@ jobs:
     outputs:
       environments: ${{ steps.detect.outputs.environments }}
     steps:
-      - uses: actions/checkout@v4
-        with:
-          fetch-depth: 0
-
-      - name: 'Detect Changed Environments'
+      - name: 'Set Production Environment'
         id: detect
         run: |
-          if [ "${{ github.event_name }}" == "pull_request" ]; then
-            # Para PRs, detecta o que mudou em relação à base
-            CHANGED=$(git diff origin/${{ github.base_ref }} --name-only | grep '^envs/' | cut -d'/' -f2 | sort -u)
-          else
-            # Para pushes na main/develop, usa o último commit
-            CHANGED=$(git diff HEAD~1 --name-only | grep '^envs/' | cut -d'/' -f2 | sort -u)
-          fi
-          
-          if [ -z "$CHANGED" ]; then
-            CHANGED="prod" # Default: sempre testa dev em mudanças de módulos
-          fi
-          
-          # Converte para JSON array corretamente
-          ENVS=$(printf '%s\n' $CHANGED | jq -R . | jq -s -c .)
-          echo "environments=$ENVS" >> $GITHUB_OUTPUT
+          echo 'environments=["prod"]' >> $GITHUB_OUTPUT
 
   # Job 2: Format Check
   format:
@@ -93,7 +67,7 @@ jobs:
       - name: 'Terraform Validate'
         run: |
           cd ${{ env.TERRAFORM_DIR }}/${{ matrix.environment }}
-          terraform init -backend=false
+          terraform init -backend=false -input=false
           terraform validate
 
       - name: 'Install TFLint'
@@ -133,7 +107,7 @@ jobs:
   # Job 5: Plan (executado em PRs)
   plan:
     name: 'Terraform Plan'
-    needs: [detect-environment, validate, security]
+    needs: detect-environment
     runs-on: ubuntu-latest
     strategy:
       matrix:
@@ -157,13 +131,13 @@ jobs:
       - name: 'Terraform Init'
         run: |
           cd ${{ env.TERRAFORM_DIR }}/${{ matrix.environment }}
-          terraform init
+          terraform init -input=false
 
       - name: 'Terraform Plan'
         id: plan
         run: |
           cd ${{ env.TERRAFORM_DIR }}/${{ matrix.environment }}
-          terraform plan -out=tfplan
+          terraform plan -var-file=terraform.tfvars -out=tfplan -input=false
 
       - name: 'Upload TF Plan'
         uses: actions/upload-artifact@v4
@@ -190,12 +164,12 @@ jobs:
   # Job 6: Apply (executado apenas na main após merge)
   apply:
     name: 'Terraform Apply'
-    needs: [detect-environment, validate, security]
+    needs: [detect-environment, validate, security, plan]
     runs-on: ubuntu-latest
     strategy:
       matrix:
         environment: ${{ fromJson(needs.detect-environment.outputs.environments) }}
-    if: false # Desabilitado para evitar execução acidental, mas pode ser habilitado para testes
+    if: github.ref == 'refs/heads/main' && github.event_name == 'push'
     environment:
       name: terraform-${{ matrix.environment }}
       url: ${{ steps.apply.outputs.cluster_endpoint }}
@@ -217,13 +191,13 @@ jobs:
       - name: 'Terraform Init'
         run: |
           cd ${{ env.TERRAFORM_DIR }}/${{ matrix.environment }}
-          terraform init
+          terraform init -input=false
 
       - name: 'Terraform Plan'
         id: plan
         run: |
           cd ${{ env.TERRAFORM_DIR }}/${{ matrix.environment }}
-          terraform plan -out=tfplan
+          terraform plan -var-file=terraform.tfvars -out=tfplan -input=false
           echo "plan_exit_code=$?" >> $GITHUB_OUTPUT
 
       - name: 'Review Terraform Plan'
