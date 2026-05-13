@@ -46,10 +46,6 @@ variable "min_size" {
 variable "max_size" {
   description = "Quantidade máxima de nós"
   type        = number
-  validation {
-    condition     = var.max_size >= var.desired_size
-    error_message = "max_size deve ser maior ou igual a desired_size."
-  }
 }
 
 variable "subnet_ids" {
