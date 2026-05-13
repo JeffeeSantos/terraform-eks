@@ -155,11 +155,7 @@ jobs:
         id: plan
         run: |
           cd ${{ env.TERRAFORM_DIR }}/${{ matrix.environment }}
-
-          terraform plan \
-            -var-file="terraform.tfvars" \
-            -input=false \
-            -out=tfplan
+          terraform plan -out=tfplan
 
       - name: 'Upload TF Plan'
         uses: actions/upload-artifact@v4
