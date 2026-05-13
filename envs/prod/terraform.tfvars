@@ -14,7 +14,7 @@
 
 aws_region   = "us-east-1"
 environment  = "prod"
-project_name = "DevOps_EKS_Trainning_Jefferson_PROD"
+project_name = "DevOps_EKS_PRD_Jefferson"
 
 # Rede - Multi-AZ para alta disponibilidade
 vpc_cidr           = "172.20.0.0/16"
