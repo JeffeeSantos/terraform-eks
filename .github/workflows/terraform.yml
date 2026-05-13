@@ -8,6 +8,25 @@ on:
     branches:
       - main
       - develop
+  workflow_dispatch:
+    inputs:
+      action:
+        description: 'Action to execute'
+        required: true
+        default: 'plan'
+        type: choice
+        options:
+          - plan
+          - apply
+          - destroy
+
+      environment:
+        description: 'Environment'
+        required: true
+        default: 'prod'
+        type: choice
+        options:
+          - prod
 
 env:
   TF_VERSION: '1.5.0'
@@ -293,3 +312,32 @@ jobs:
                 }
               ]
             }
+
+  destroy:
+    name: 'Terraform Destroy'
+    runs-on: ubuntu-latest
+    if: github.event_name == 'workflow_dispatch' && github.event.inputs.action == 'destroy'
+    steps:
+      - uses: actions/checkout@v4
+
+      - name: 'Setup Terraform'
+        uses: hashicorp/setup-terraform@v2
+        with:
+          terraform_version: ${{ env.TF_VERSION }}
+
+      - name: 'Configure AWS Credentials'
+        uses: aws-actions/configure-aws-credentials@v4
+        with:
+          role-to-assume: ${{ secrets.AWS_ROLE_ARN }}
+          role-session-name: terraform-destroy
+          aws-region: us-east-1
+
+      - name: 'Terraform Init'
+        run: |
+          cd envs/prod
+          terraform init -input=false
+
+      - name: 'Terraform Destroy'
+        run: |
+          cd envs/prod
+          terraform destroy -var-file=terraform.tfvars -auto-approve
