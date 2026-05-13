@@ -137,7 +137,7 @@ jobs:
     strategy:
       matrix:
         environment: ${{ fromJson(needs.detect-environment.outputs.environments) }}
-    if: false # Desabilitado para evitar execução em PRs, mas pode ser habilitado para testes
+    if: github.event_name == 'pull_request'
     steps:
       - uses: actions/checkout@v4
 
