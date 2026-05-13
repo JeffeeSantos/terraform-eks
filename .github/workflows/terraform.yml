@@ -85,7 +85,7 @@ jobs:
       - name: 'Terraform Validate'
         run: |
           cd ${{ env.TERRAFORM_DIR }}/${{ matrix.environment }}
-          terraform init -backend=false
+          terraform init -backend=false -input=false
           terraform validate
 
       - name: 'Install TFLint'
@@ -149,13 +149,13 @@ jobs:
       - name: 'Terraform Init'
         run: |
           cd ${{ env.TERRAFORM_DIR }}/${{ matrix.environment }}
-          terraform init
+          terraform init -input=false
 
       - name: 'Terraform Plan'
         id: plan
         run: |
           cd ${{ env.TERRAFORM_DIR }}/${{ matrix.environment }}
-          terraform plan -out=tfplan
+          terraform plan -var-file=terraform.tfvars -out=tfplan -input=false
 
       - name: 'Upload TF Plan'
         uses: actions/upload-artifact@v4
@@ -209,13 +209,13 @@ jobs:
       - name: 'Terraform Init'
         run: |
           cd ${{ env.TERRAFORM_DIR }}/${{ matrix.environment }}
-          terraform init
+          terraform init -input=false
 
       - name: 'Terraform Plan'
         id: plan
         run: |
           cd ${{ env.TERRAFORM_DIR }}/${{ matrix.environment }}
-          terraform plan -out=tfplan
+          terraform plan -var-file=terraform.tfvars -out=tfplan -input=false
           echo "plan_exit_code=$?" >> $GITHUB_OUTPUT
 
       - name: 'Review Terraform Plan'
