@@ -9,6 +9,9 @@ on:
       - main
       - develop
 
+  issue_comment:
+    types: [created]
+
 env:
   TF_VERSION: '1.5.0'
   TERRAFORM_DIR: './envs'
@@ -169,7 +172,9 @@ jobs:
     strategy:
       matrix:
         environment: ${{ fromJson(needs.detect-environment.outputs.environments) }}
-    if: false # Desabilitado para evitar execução acidental, mas pode ser habilitado para testes
+    if: |
+      github.event_name == 'issue_comment' &&
+      contains(github.event.comment.body, '/terraform apply')
     environment:
       name: terraform-${{ matrix.environment }}
       url: ${{ steps.apply.outputs.cluster_endpoint }}
