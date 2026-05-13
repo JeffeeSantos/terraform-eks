@@ -161,10 +161,52 @@ jobs:
               body: `## Terraform Plan - ${environment}\n\`\`\`\n${planOutput}\n\`\`\``
             });
 
-  # Job 6: Apply (executado apenas na main após merge)
+  # Job 5B: Plan for Push (executado em push para main/develop)
+  plan-push:
+    name: 'Terraform Plan (Push)'
+    needs: [detect-environment, validate, security]
+    runs-on: ubuntu-latest
+    strategy:
+      matrix:
+        environment: ${{ fromJson(needs.detect-environment.outputs.environments) }}
+    if: github.event_name == 'push' && (github.ref == 'refs/heads/main' || github.ref == 'refs/heads/develop')
+    steps:
+      - uses: actions/checkout@v4
+
+      - name: 'Setup Terraform'
+        uses: hashicorp/setup-terraform@v2
+        with:
+          terraform_version: ${{ env.TF_VERSION }}
+
+      - name: 'Configure AWS Credentials'
+        uses: aws-actions/configure-aws-credentials@v4
+        with:
+          role-to-assume: ${{ secrets.AWS_ROLE_ARN }}
+          role-session-name: terraform-plan-${{ matrix.environment }}
+          aws-region: us-east-1
+
+      - name: 'Terraform Init'
+        run: |
+          cd ${{ env.TERRAFORM_DIR }}/${{ matrix.environment }}
+          terraform init -input=false
+
+      - name: 'Terraform Plan'
+        id: plan
+        run: |
+          cd ${{ env.TERRAFORM_DIR }}/${{ matrix.environment }}
+          terraform plan -var-file=terraform.tfvars -out=tfplan -input=false
+
+      - name: 'Upload TF Plan'
+        uses: actions/upload-artifact@v4
+        with:
+          name: tfplan-${{ matrix.environment }}
+          path: ${{ env.TERRAFORM_DIR }}/${{ matrix.environment }}/tfplan
+          retention-days: 1
+
+  # Job 6: Apply (executado apenas em push para main após merge)
   apply:
     name: 'Terraform Apply'
-    needs: [detect-environment, validate, security, plan]
+    needs: [detect-environment, validate, security, plan-push]
     runs-on: ubuntu-latest
     strategy:
       matrix:
