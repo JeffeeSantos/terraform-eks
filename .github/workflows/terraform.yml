@@ -110,12 +110,15 @@ jobs:
   # Job 5: Plan (executado em PRs)
   plan:
     name: 'Terraform Plan'
-    needs: [detect-environment, validate, security]
+    needs: detect-environment
     runs-on: ubuntu-latest
     strategy:
       matrix:
         environment: ${{ fromJson(needs.detect-environment.outputs.environments) }}
-    if: github.event_name == 'pull_request'
+    if: |
+      github.event_name == 'issue_comment' &&
+      contains(github.event.comment.body, '/terraform apply') &&
+      github.event.comment.author_association == 'OWNER'
     steps:
       - uses: actions/checkout@v4
 
@@ -180,6 +183,8 @@ jobs:
       url: ${{ steps.apply.outputs.cluster_endpoint }}
     steps:
       - uses: actions/checkout@v4
+        with:
+          ref: refs/pull/${{ github.event.issue.number }}/head
 
       - name: 'Setup Terraform'
         uses: hashicorp/setup-terraform@v2
