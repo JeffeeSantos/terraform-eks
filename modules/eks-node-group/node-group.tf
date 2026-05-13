@@ -7,7 +7,7 @@ resource "aws_eks_node_group" "main" {
   node_group_name = "${var.cluster_name}-${var.node_group_name}"
   node_role_arn   = aws_iam_role.node_role.arn
   subnet_ids      = var.subnet_ids
-  version         = null  # Usar versão do cluster
+  version         = null # Usar versão do cluster
 
   scaling_config {
     desired_size = var.desired_size

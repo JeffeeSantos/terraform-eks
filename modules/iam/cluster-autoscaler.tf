@@ -34,9 +34,9 @@ resource "aws_iam_role" "cluster_autoscaler" {
 
 # Policy para Cluster Autoscaler
 resource "aws_iam_role_policy" "cluster_autoscaler" {
-  count  = var.enable_cluster_autoscaler ? 1 : 0
-  name   = "${local.name_prefix}-cluster-autoscaler-policy"
-  role   = aws_iam_role.cluster_autoscaler[0].id
+  count = var.enable_cluster_autoscaler ? 1 : 0
+  name  = "${local.name_prefix}-cluster-autoscaler-policy"
+  role  = aws_iam_role.cluster_autoscaler[0].id
   policy = jsonencode({
     Version = "2012-10-17"
     Statement = [

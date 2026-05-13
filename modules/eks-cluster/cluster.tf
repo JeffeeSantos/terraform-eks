@@ -5,9 +5,9 @@
 #################################################################################
 
 resource "aws_eks_cluster" "main" {
-  name            = local.name_prefix
-  version         = var.cluster_version
-  role_arn        = aws_iam_role.eks_control_plane.arn
+  name     = local.name_prefix
+  version  = var.cluster_version
+  role_arn = aws_iam_role.eks_control_plane.arn
   enabled_cluster_log_types = var.enable_logging ? [
     "api",
     "audit",
@@ -40,10 +40,10 @@ resource "aws_eks_cluster" "main" {
 
 # EBS CSI Driver Add-on
 resource "aws_eks_addon" "ebs_csi" {
-  count             = var.enable_ebs_csi_driver ? 1 : 0
-  cluster_name      = aws_eks_cluster.main.name
-  addon_name        = "aws-ebs-csi-driver"
-  addon_version     = data.aws_eks_addon_version.ebs_csi.version
+  count                    = var.enable_ebs_csi_driver ? 1 : 0
+  cluster_name             = aws_eks_cluster.main.name
+  addon_name               = "aws-ebs-csi-driver"
+  addon_version            = data.aws_eks_addon_version.ebs_csi.version
   service_account_role_arn = aws_iam_role.ebs_csi[0].arn
 
   tags = local.common_tags
@@ -51,10 +51,10 @@ resource "aws_eks_addon" "ebs_csi" {
 
 # EFS CSI Driver Add-on
 resource "aws_eks_addon" "efs_csi" {
-  count             = var.enable_efs_csi_driver ? 1 : 0
-  cluster_name      = aws_eks_cluster.main.name
-  addon_name        = "aws-efs-csi-driver"
-  addon_version     = data.aws_eks_addon_version.efs_csi.version
+  count                    = var.enable_efs_csi_driver ? 1 : 0
+  cluster_name             = aws_eks_cluster.main.name
+  addon_name               = "aws-efs-csi-driver"
+  addon_version            = data.aws_eks_addon_version.efs_csi.version
   service_account_role_arn = aws_iam_role.efs_csi[0].arn
 
   tags = local.common_tags
@@ -62,9 +62,9 @@ resource "aws_eks_addon" "efs_csi" {
 
 # VPC CNI Add-on
 resource "aws_eks_addon" "vpc_cni" {
-  cluster_name      = aws_eks_cluster.main.name
-  addon_name        = "vpc-cni"
-  addon_version     = data.aws_eks_addon_version.vpc_cni.version
+  cluster_name             = aws_eks_cluster.main.name
+  addon_name               = "vpc-cni"
+  addon_version            = data.aws_eks_addon_version.vpc_cni.version
   service_account_role_arn = aws_iam_role.vpc_cni.arn
 
   tags = local.common_tags
@@ -72,18 +72,18 @@ resource "aws_eks_addon" "vpc_cni" {
 
 # CoreDNS Add-on
 resource "aws_eks_addon" "coredns" {
-  cluster_name      = aws_eks_cluster.main.name
-  addon_name        = "coredns"
-  addon_version     = data.aws_eks_addon_version.coredns.version
+  cluster_name  = aws_eks_cluster.main.name
+  addon_name    = "coredns"
+  addon_version = data.aws_eks_addon_version.coredns.version
 
   tags = local.common_tags
 }
 
 # kube-proxy Add-on
 resource "aws_eks_addon" "kube_proxy" {
-  cluster_name      = aws_eks_cluster.main.name
-  addon_name        = "kube-proxy"
-  addon_version     = data.aws_eks_addon_version.kube_proxy.version
+  cluster_name  = aws_eks_cluster.main.name
+  addon_name    = "kube-proxy"
+  addon_version = data.aws_eks_addon_version.kube_proxy.version
 
   tags = local.common_tags
 }

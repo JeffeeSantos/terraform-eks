@@ -30,8 +30,8 @@ resource "aws_iam_role" "load_balancer_controller" {
 
 # Política detalhada para ALB/NLB
 resource "aws_iam_role_policy" "load_balancer_controller" {
-  name   = "${local.name_prefix}-load-balancer-controller-policy"
-  role   = aws_iam_role.load_balancer_controller.id
+  name = "${local.name_prefix}-load-balancer-controller-policy"
+  role = aws_iam_role.load_balancer_controller.id
   policy = jsonencode({
     Version = "2012-10-17"
     Statement = [

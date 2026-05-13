@@ -17,10 +17,10 @@ resource "aws_subnet" "public" {
   tags = merge(
     local.common_tags,
     {
-      Name                                   = "${local.name_prefix}-public-subnet-${count.index + 1}"
-      "kubernetes.io/role/elb"              = "1"
-      "kubernetes.io/role/internal-elb"     = "1"
-      "karpenter.sh/discovery"               = local.cluster_name
+      Name                              = "${local.name_prefix}-public-subnet-${count.index + 1}"
+      "kubernetes.io/role/elb"          = "1"
+      "kubernetes.io/role/internal-elb" = "1"
+      "karpenter.sh/discovery"          = local.cluster_name
     }
   )
 }
@@ -35,9 +35,9 @@ resource "aws_subnet" "private" {
   tags = merge(
     local.common_tags,
     {
-      Name                                   = "${local.name_prefix}-private-subnet-${count.index + 1}"
-      "kubernetes.io/role/internal-elb"     = "1"
-      "karpenter.sh/discovery"               = local.cluster_name
+      Name                              = "${local.name_prefix}-private-subnet-${count.index + 1}"
+      "kubernetes.io/role/internal-elb" = "1"
+      "karpenter.sh/discovery"          = local.cluster_name
     }
   )
 }
@@ -47,8 +47,8 @@ resource "aws_route_table" "public" {
   vpc_id = aws_vpc.main.id
 
   route {
-    cidr_block      = "0.0.0.0/0"
-    gateway_id      = aws_internet_gateway.main.id
+    cidr_block = "0.0.0.0/0"
+    gateway_id = aws_internet_gateway.main.id
   }
 
   tags = merge(

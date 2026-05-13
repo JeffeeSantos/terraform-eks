@@ -33,9 +33,9 @@ resource "aws_iam_role" "load_balancer_controller" {
 
 # Policy para AWS Load Balancer Controller
 resource "aws_iam_role_policy" "load_balancer_controller" {
-  count  = var.enable_load_balancer_controller ? 1 : 0
-  name   = "${local.name_prefix}-load-balancer-controller-policy"
-  role   = aws_iam_role.load_balancer_controller[0].id
+  count = var.enable_load_balancer_controller ? 1 : 0
+  name  = "${local.name_prefix}-load-balancer-controller-policy"
+  role  = aws_iam_role.load_balancer_controller[0].id
   policy = jsonencode({
     Version = "2012-10-17"
     Statement = [

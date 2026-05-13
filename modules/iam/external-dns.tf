@@ -32,9 +32,9 @@ resource "aws_iam_role" "external_dns" {
 }
 
 resource "aws_iam_role_policy" "external_dns" {
-  count  = var.enable_external_dns ? 1 : 0
-  name   = "${local.name_prefix}-external-dns-policy"
-  role   = aws_iam_role.external_dns[0].id
+  count = var.enable_external_dns ? 1 : 0
+  name  = "${local.name_prefix}-external-dns-policy"
+  role  = aws_iam_role.external_dns[0].id
   policy = jsonencode({
     Version = "2012-10-17"
     Statement = [

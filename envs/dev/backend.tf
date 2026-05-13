@@ -15,18 +15,18 @@
 terraform {
   backend "s3" {
     # SUBSTITUIR: Nome do seu bucket S3
-    bucket         = "seu-bucket-terraform-state"
-    
+    bucket = "seu-bucket-terraform-state"
+
     # Chave/caminho do arquivo de estado por ambiente
-    key            = "terraform-eks/dev/terraform.tfstate"
-    
+    key = "terraform-eks/dev/terraform.tfstate"
+
     # Região onde o bucket S3 está localizado
-    region         = "us-east-1"
-    
+    region = "us-east-1"
+
     # SUBSTITUIR: Nome da sua tabela DynamoDB
     dynamodb_table = "terraform-state-lock"
-    
+
     # Encriptação do estado em repouso
-    encrypt        = true
+    encrypt = true
   }
 }
