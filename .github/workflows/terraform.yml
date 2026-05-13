@@ -107,7 +107,7 @@ jobs:
   # Job 5: Plan (executado em PRs)
   plan:
     name: 'Terraform Plan'
-    needs: [detect-environment, validate, security]
+    needs: detect-environment
     runs-on: ubuntu-latest
     strategy:
       matrix:
@@ -160,6 +160,8 @@ jobs:
               repo: context.repo.repo,
               body: `## Terraform Plan - ${environment}\n\`\`\`\n${planOutput}\n\`\`\``
             });
+
+  # Job 5B: Plan for Push (executado em push para main/develop)
   plan-push:
     name: 'Terraform Plan (Push)'
     needs: [detect-environment, validate, security]
