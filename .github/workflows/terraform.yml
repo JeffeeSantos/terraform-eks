@@ -53,9 +53,9 @@ jobs:
             CHANGED="dev hml"  # Default: sempre testa dev em mudanças de módulos
           fi
           
-          # Converte para JSON array
-          ENVS=$(echo "$CHANGED" | tr '\n' ',' | sed 's/,$//' | sed "s/\([^ ]*\)/\"\1\"/g" | sed 's/ /,/g')
-          echo "environments=[$ENVS]" >> $GITHUB_OUTPUT
+          # Converte para JSON array corretamente
+          ENVS=$(printf '%s\n' $CHANGED | jq -R . | jq -s -c .)
+          echo "environments=$ENVS" >> $GITHUB_OUTPUT
 
   # Job 2: Format Check
   format:
