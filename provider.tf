@@ -14,7 +14,7 @@ terraform {
     }
   }
   backend "s3" {
-    bucket = "comunidadedevops-jefferson"
+    bucket = "terraform-trainning-jefferson-s3"
     key    = "terraform-eks/terraform.tfstate"
     region = "us-east-1"
   }
