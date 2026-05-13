@@ -27,28 +27,10 @@ jobs:
     outputs:
       environments: ${{ steps.detect.outputs.environments }}
     steps:
-      - uses: actions/checkout@v4
-        with:
-          fetch-depth: 0
-
-      - name: 'Detect Changed Environments'
+      - name: 'Set Production Environment'
         id: detect
         run: |
-          if [ "${{ github.event_name }}" == "pull_request" ]; then
-            # Para PRs, detecta o que mudou em relação à base
-            CHANGED=$(git diff origin/${{ github.base_ref }} --name-only | grep '^envs/' | cut -d'/' -f2 | sort -u)
-          else
-            # Para pushes na main/develop, usa o último commit
-            CHANGED=$(git diff HEAD~1 --name-only | grep '^envs/' | cut -d'/' -f2 | sort -u)
-          fi
-          
-          if [ -z "$CHANGED" ]; then
-            CHANGED="prod" # Default: sempre testa dev em mudanças de módulos
-          fi
-          
-          # Converte para JSON array corretamente
-          ENVS=$(printf '%s\n' $CHANGED | jq -R . | jq -s -c .)
-          echo "environments=$ENVS" >> $GITHUB_OUTPUT
+          echo 'environments=["prod"]' >> $GITHUB_OUTPUT
 
   # Job 2: Format Check
   format:
