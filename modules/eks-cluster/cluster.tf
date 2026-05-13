@@ -8,6 +8,7 @@ resource "aws_eks_cluster" "main" {
   name     = local.name_prefix
   version  = var.cluster_version
   role_arn = aws_iam_role.eks_control_plane.arn
+
   enabled_cluster_log_types = var.enable_logging ? [
     "api",
     "audit",
@@ -22,8 +23,6 @@ resource "aws_eks_cluster" "main" {
     endpoint_private_access = true
     endpoint_public_access  = true
   }
-
-  cloudwatch_log_group_name = var.enable_logging ? aws_cloudwatch_log_group.eks_control_plane[0].name : null
 
   tags = merge(
     local.common_tags,
