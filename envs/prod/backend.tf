@@ -10,10 +10,10 @@
 
 terraform {
   backend "s3" {
-    bucket         = "seu-bucket-terraform-state-prod"
-    key            = "terraform-eks/prod/terraform.tfstate"
-    region         = "us-east-1"
-    dynamodb_table = "terraform-state-lock-prod"
-    encrypt        = true
+    bucket = "terraform-trainning-jefferson-s3"
+    key    = "terraform-eks/prod/terraform.tfstate"
+    region = "us-east-1"
+    #dynamodb_table = "terraform-state-lock-prod"
+    encrypt = true
   }
 }
