@@ -241,3 +241,4 @@ Dúvidas? Abra uma issue ou consulte a documentação em `docs/`
 # test pipeline
 # second test pipeline
 # 3 test pipeline
+# 4 test pipeline
