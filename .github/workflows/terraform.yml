@@ -55,25 +55,8 @@ jobs:
       - name: 'Detect Changed Environments'
         id: detect
         run: |
-          if [ "${{ github.event_name }}" = "workflow_dispatch" ]; then
-            # Manual trigger - use selected environment
-            echo 'environments=["${{ github.event.inputs.environment }}"]' >> $GITHUB_OUTPUT
-          else
-            # Auto-detect from changed files
-            git fetch origin main:main 2>/dev/null || true
-            CHANGED_FILES=$(git diff --name-only origin/main...HEAD 2>/dev/null || echo "envs/prod")
-            
-            ENVS='[]'
-            [[ $CHANGED_FILES == *"envs/dev"* ]] && ENVS=$(echo $ENVS | jq -c '. += ["dev"]')
-            [[ $CHANGED_FILES == *"envs/hml"* ]] && ENVS=$(echo $ENVS | jq -c '. += ["hml"]')
-            [[ $CHANGED_FILES == *"envs/prod"* ]] && ENVS=$(echo $ENVS | jq -c '. += ["prod"]')
-            [[ $CHANGED_FILES == *"modules"* ]] && ENVS='["dev","hml","prod"]'
-            
-            # Default to prod if no env changes detected
-            [ "$ENVS" = "[]" ] && ENVS='["prod"]'
-            
-            echo 'environments='$ENVS >> $GITHUB_OUTPUT
-          fi
+          # For now, only validate prod environment
+          echo 'environments=["prod"]' >> $GITHUB_OUTPUT
 
   # Job 2: Format Check
   format:

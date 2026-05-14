@@ -117,22 +117,6 @@ resource "aws_eks_addon" "efs_csi" {
   tags = local.common_tags
 }
 
-resource "aws_eks_addon" "efs_csi" {
-  count                    = var.enable_efs_csi_driver ? 1 : 0
-  cluster_name             = aws_eks_cluster.main.name
-  addon_name               = "aws-efs-csi-driver"
-  addon_version            = data.aws_eks_addon_version.efs_csi.version
-  service_account_role_arn = aws_iam_role.efs_csi[0].arn
-
-  timeouts {
-    create = "10m"
-    update = "10m"
-    delete = "10m"
-  }
-
-  tags = local.common_tags
-}
-
 # Data sources para versões de Add-ons
 data "aws_eks_addon_version" "ebs_csi" {
   addon_name         = "aws-ebs-csi-driver"
