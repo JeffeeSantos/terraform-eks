@@ -23,9 +23,11 @@ on:
       environment:
         description: 'Environment'
         required: true
-        default: 'prod'
+        default: 'dev'
         type: choice
         options:
+          - dev
+          - hml
           - prod
 
 env:
@@ -46,9 +48,14 @@ jobs:
     outputs:
       environments: ${{ steps.detect.outputs.environments }}
     steps:
-      - name: 'Set Production Environment'
+      - uses: actions/checkout@v4
+        with:
+          fetch-depth: 0
+
+      - name: 'Detect Changed Environments'
         id: detect
         run: |
+          # For now, only validate prod environment
           echo 'environments=["prod"]' >> $GITHUB_OUTPUT
 
   # Job 2: Format Check
