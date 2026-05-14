@@ -37,7 +37,7 @@ resource "aws_eks_cluster" "main" {
   ]
 }
 
-# VPC CNI Add-on (criar primeiro - é crítico para rede)
+# VPC CNI Add-on (suporta rede, pode ser paralelo)
 resource "aws_eks_addon" "vpc_cni" {
   cluster_name             = aws_eks_cluster.main.name
   addon_name               = "vpc-cni"
@@ -45,49 +45,45 @@ resource "aws_eks_addon" "vpc_cni" {
   service_account_role_arn = aws_iam_role.vpc_cni.arn
 
   timeouts {
-    create = "25m"
-    update = "25m"
-    delete = "15m"
+    create = "10m"
+    update = "10m"
+    delete = "10m"
   }
 
   tags = local.common_tags
 }
 
-# CoreDNS Add-on (dependência: aguarda VPC CNI)
+# CoreDNS Add-on (paralelo com VPC CNI e kube-proxy)
 resource "aws_eks_addon" "coredns" {
   cluster_name  = aws_eks_cluster.main.name
   addon_name    = "coredns"
   addon_version = data.aws_eks_addon_version.coredns.version
 
   timeouts {
-    create = "25m"
-    update = "25m"
-    delete = "15m"
+    create = "10m"
+    update = "10m"
+    delete = "10m"
   }
-
-  depends_on = [aws_eks_addon.vpc_cni]
 
   tags = local.common_tags
 }
 
-# kube-proxy Add-on (dependência: aguarda CoreDNS)
+# kube-proxy Add-on (paralelo com VPC CNI e CoreDNS)
 resource "aws_eks_addon" "kube_proxy" {
   cluster_name  = aws_eks_cluster.main.name
   addon_name    = "kube-proxy"
   addon_version = data.aws_eks_addon_version.kube_proxy.version
 
   timeouts {
-    create = "25m"
-    update = "25m"
-    delete = "15m"
+    create = "10m"
+    update = "10m"
+    delete = "10m"
   }
-
-  depends_on = [aws_eks_addon.coredns]
 
   tags = local.common_tags
 }
 
-# EBS CSI Driver Add-on (dependência: aguarda kube-proxy)
+# EBS CSI Driver Add-on (paralelo, sem dependências)
 resource "aws_eks_addon" "ebs_csi" {
   count                    = var.enable_ebs_csi_driver ? 1 : 0
   cluster_name             = aws_eks_cluster.main.name
@@ -96,17 +92,15 @@ resource "aws_eks_addon" "ebs_csi" {
   service_account_role_arn = aws_iam_role.ebs_csi[0].arn
 
   timeouts {
-    create = "25m"
-    update = "25m"
-    delete = "15m"
+    create = "10m"
+    update = "10m"
+    delete = "10m"
   }
-
-  depends_on = [aws_eks_addon.kube_proxy]
 
   tags = local.common_tags
 }
 
-# EFS CSI Driver Add-on (dependência: aguarda EBS CSI)
+# EFS CSI Driver Add-on (paralelo, sem dependências)
 resource "aws_eks_addon" "efs_csi" {
   count                    = var.enable_efs_csi_driver ? 1 : 0
   cluster_name             = aws_eks_cluster.main.name
@@ -115,12 +109,26 @@ resource "aws_eks_addon" "efs_csi" {
   service_account_role_arn = aws_iam_role.efs_csi[0].arn
 
   timeouts {
-    create = "25m"
-    update = "25m"
-    delete = "15m"
+    create = "10m"
+    update = "10m"
+    delete = "10m"
   }
 
-  depends_on = [aws_eks_addon.kube_proxy]
+  tags = local.common_tags
+}
+
+resource "aws_eks_addon" "efs_csi" {
+  count                    = var.enable_efs_csi_driver ? 1 : 0
+  cluster_name             = aws_eks_cluster.main.name
+  addon_name               = "aws-efs-csi-driver"
+  addon_version            = data.aws_eks_addon_version.efs_csi.version
+  service_account_role_arn = aws_iam_role.efs_csi[0].arn
+
+  timeouts {
+    create = "10m"
+    update = "10m"
+    delete = "10m"
+  }
 
   tags = local.common_tags
 }
