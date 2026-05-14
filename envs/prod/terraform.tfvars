@@ -21,7 +21,7 @@ vpc_cidr           = "172.20.0.0/16"
 availability_zones = ["us-east-1a", "us-east-1b"]
 
 # Cluster - Latest stable version
-cluster_version = "1.28"
+cluster_version = "1.29"
 
 # Node Group - Production-grade
 node_group_instance_types = ["t3.medium"]

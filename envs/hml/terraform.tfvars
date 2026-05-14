@@ -17,7 +17,7 @@ vpc_cidr           = "172.30.0.0/16"
 availability_zones = ["us-east-1a", "us-east-1b"]
 
 # Cluster
-cluster_version = "1.28"
+cluster_version = "1.29"
 
 # Node Group - Balanced para hml
 node_group_instance_types = ["t3.medium"]
