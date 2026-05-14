@@ -270,6 +270,7 @@ jobs:
       - name: 'Terraform Apply'
         id: apply
         if: steps.review.outputs.approved == 'true'
+        timeout-minutes: 120
         run: |
           cd ${{ env.TERRAFORM_DIR }}/${{ matrix.environment }}
           terraform apply -auto-approve tfplan
