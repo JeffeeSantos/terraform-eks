@@ -57,7 +57,7 @@ resource "aws_iam_role_policy" "vpc_flow_logs" {
           "logs:DescribeLogStreams"
         ]
         Effect   = "Allow"
-        Resource = "arn:aws:logs:${data.aws_region.current.name}:${data.aws_caller_identity.current.account_id}:log-group-eks-taining:/aws/vpc/flowlogs/*"
+        Resource = "arn:aws:logs:${data.aws_region.current.name}:${data.aws_caller_identity.current.account_id}:log-group:/aws/vpc/flowlogs/*"
       }
     ]
   })
