@@ -17,9 +17,9 @@ variable "project_name" {
 }
 
 variable "cluster_version" {
-  description = "Versão do Kubernetes (ex: 1.28)"
+  description = "Versão do Kubernetes (ex: 1.29)"
   type        = string
-  default     = "1.28"
+  default     = "1.29"
 }
 
 variable "vpc_id" {

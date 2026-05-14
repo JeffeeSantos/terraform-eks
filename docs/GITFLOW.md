@@ -68,7 +68,7 @@ GitFlow é um modelo de branching que define quando e como usar branches:
 - **Exemplos**:
   - feature/adiciona-autoscaling
   - feature/implementa-monitoring
-  - feature/upgrade-kubernetes-1.28
+  - feature/upgrade-kubernetes-1.29
 
 ### bugfix/*
 

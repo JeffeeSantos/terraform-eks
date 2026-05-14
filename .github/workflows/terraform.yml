@@ -275,44 +275,6 @@ jobs:
           terraform apply -auto-approve tfplan
           echo "cluster_endpoint=$(terraform output -raw cluster_endpoint 2>/dev/null || echo 'N/A')" >> $GITHUB_OUTPUT
 
-      - name: 'Slack Notification - Success'
-        if: success()
-        uses: slackapi/slack-github-action@v1.24.0
-        with:
-          webhook-url: ${{ secrets.SLACK_WEBHOOK_URL }}
-          payload: |
-            {
-              "text": "✅ Terraform Apply Success",
-              "blocks": [
-                {
-                  "type": "section",
-                  "text": {
-                    "type": "mrkdwn",
-                    "text": "*Terraform Apply - Success* ✅\nEnvironment: ${{ matrix.environment }}\nRef: ${{ github.ref }}\nCommit: ${{ github.sha }}"
-                  }
-                }
-              ]
-            }
-
-      - name: 'Slack Notification - Failure'
-        if: failure()
-        uses: slackapi/slack-github-action@v1.24.0
-        with:
-          webhook-url: ${{ secrets.SLACK_WEBHOOK_URL }}
-          payload: |
-            {
-              "text": "❌ Terraform Apply Failed",
-              "blocks": [
-                {
-                  "type": "section",
-                  "text": {
-                    "type": "mrkdwn",
-                    "text": "*Terraform Apply - Failed* ❌\nEnvironment: ${{ matrix.environment }}\nRef: ${{ github.ref }}\nActor: ${{ github.actor }}"
-                  }
-                }
-              ]
-            }
-
   destroy:
     name: 'Terraform Destroy'
     runs-on: ubuntu-latest
